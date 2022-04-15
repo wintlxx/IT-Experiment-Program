@@ -1,2 +1,2 @@
 # IT-Experiment-Program
-It's our homework.
+It's a homework.
