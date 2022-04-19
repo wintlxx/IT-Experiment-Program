@@ -18,7 +18,7 @@ char s1[100] , s2[100] ;//存储终结符和非终结符
 int first[20][20] ;
 int follow[20][20] ;
 int vis[100];//禁止重复递归
-int acc[20] ;//使用以求得的集合
+int acc[20] ;
 int select1[100][20] ;
 int c[20][20] ;
 char sta[100] ;
