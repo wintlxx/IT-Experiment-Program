@@ -1,0 +1,396 @@
+#include <stdio.h>
+#include <math.h>
+#include <string.h>
+#include <stdlib.h>
+#include <iostream>
+#include <sstream>
+#include <algorithm>
+#include <set>
+#include <queue>
+#include <stack>
+#include <map>
+#include <bitset>
+#pragma comment(linker, "/STACK:102400000,102400000")
+typedef long long LL;
+const int inf = 0x3f3f3f3f;
+const double pi = acos(-1.0);
+const double esp = 1e-6;
+using namespace std;
+const int Maxn = 110;
+const int maxn = 20;
+char str[maxn][Maxn];  //输入文法
+char st[maxn];         //输入串
+char stac[maxn];       //模拟栈的数组
+char nstr[maxn][maxn]; //储存转化文法
+char mstr[maxn][maxn];
+char fin[maxn]; //存储终结符
+char firstvt[maxn][maxn], lastvt[maxn][maxn];
+char cmp[maxn][maxn];                //存储表中的比较符
+int firstflag[maxn], lastflag[maxn]; //非终结符的firstvt,lastvt是否求出
+int fcnt[maxn], lcnt[maxn];          //非终结符firsvt和lastvt的个数
+int is_fin(char c)
+{ //判断终结符
+    for (int i = 0; fin[i] != '\0'; i++)
+    {
+        if (fin[i] == c)
+            return 1;
+    }
+    return 0;
+}
+int site(char c)
+{ //求在表中的下标
+    for (int i = 0; fin[i] != '\0'; i++)
+    {
+        if (fin[i] == c)
+            return i;
+    }
+}
+void get_firstvt(char s, int t)
+{ //求s非终结符的firstvt值
+    int i, j, ii, jj, tt;
+    for (i = 0; i < t; i++)
+    {
+        if (str[i][0] == s)
+            break;
+    }
+    if (!firstflag[i])
+    {
+        int k = fcnt[i];
+        for (j = 0; str[i][j] != '\0'; j++)
+        {
+            if (j == 2 || str[i][j] == '|')
+            {
+                if (is_fin(str[i][j + 1]))
+                {
+                    firstvt[i][k++] = str[i][j + 1];
+                }
+                else
+                {
+                    if (is_fin(str[i][j + 2]))
+                    {
+                        firstvt[i][k++] = str[i][j + 2];
+                    }
+                    if (str[i][j + 1] != s)
+                    {
+                        get_firstvt(str[i][j + 1], t);
+                        for (ii = 0; ii < t; ii++)
+                        {
+                            if (str[ii][0] == str[i][j + 1])
+                                break;
+                        }
+                        for (jj = 0; jj < fcnt[ii]; jj++)
+                        {
+                            for (tt = 0; tt < k; tt++)
+                            {
+                                if (firstvt[i][tt] == firstvt[ii][jj])
+                                    break;
+                            }
+                            if (tt == k)
+                            {
+                                firstvt[i][k++] = firstvt[ii][jj];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        firstvt[i][k] = '\0';
+        fcnt[i] = k;
+        firstflag[i] = 1;
+    }
+}
+void output_firstvt(int T)
+{ //输出firstvt集
+    for (int i = 0; i < T; i++)
+    {
+        get_firstvt(str[i][0], T);
+    }
+}
+void get_lastvt(char s, int t)
+{ //求s非终结符的lastvt值
+    int i, j, ii, jj, tt;
+    for (i = 0; i < t; i++)
+    {
+        if (str[i][0] == s)
+            break;
+    }
+    if (!lastflag[i])
+    {
+        int k = lcnt[i];
+        for (j = 0; str[i][j] != '\0'; j++)
+        {
+            if (str[i][j + 1] == '|' || str[i][j + 1] == '\0')
+            {
+                if (is_fin(str[i][j]))
+                {
+                    lastvt[i][k++] = str[i][j];
+                }
+                else
+                {
+                    if (is_fin(str[i][j - 1]))
+                    {
+                        lastvt[i][k++] = str[i][j - 1];
+                    }
+                    if (str[i][j] != s)
+                    {
+                        get_lastvt(str[i][j], t);
+                        for (ii = 0; ii < t; ii++)
+                        {
+                            if (str[ii][0] == str[i][j])
+                                break;
+                        }
+                        for (jj = 0; jj < lcnt[ii]; jj++)
+                        {
+                            for (tt = 0; tt < k; tt++)
+                            {
+                                if (lastvt[i][tt] == lastvt[ii][jj])
+                                    break;
+                            }
+                            if (tt == k)
+                            {
+                                lastvt[i][k++] = lastvt[ii][jj];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        lastvt[i][k] = '\0';
+        lcnt[i] = k;
+        lastflag[i] = 1;
+    }
+}
+void output_lastvt(int T)
+{ //输出lastvt集
+    for (int i = 0; i < T; i++)
+    {
+        get_lastvt(str[i][0], T);
+    }
+}
+void get_table(int T, int cnt)
+{ //得到表
+    int x = 0, y = 0;
+    int i, j, ii, jj;
+    for (i = 0; i < T; i++)
+    {
+        for (j = 0; str[i][j] != '\0'; j++)
+        {
+            if (str[i][j] != '|')
+                nstr[x][y++] = str[i][j];
+            else if (str[i][j] == '|')
+            {
+                nstr[x][y] = '\0';
+                x++;
+                y = 0;
+                nstr[x][y++] = str[i][0];
+                nstr[x][y++] = '-';
+                nstr[x][y++] = '>';
+            }
+        }
+        nstr[x][y] = '\0';
+        x++;
+        y = 0;
+    }
+    //对于S1->#S#;
+    char a = '#';
+    cmp[site(a)][site(a)] = '=';
+    for (i = 0; i < fcnt[0]; i++)
+    {
+        cmp[site(a)][site(firstvt[0][i])] = '<';
+    }
+    for (i = 0; i < lcnt[0]; i++)
+    {
+        cmp[site(lastvt[0][i])][site(a)] = '>';
+    }
+    //对于初始的文法
+    for (i = 0; i < x; i++)
+    {
+        for (j = 3; nstr[i][j + 1] != '\0'; j++)
+        {
+            if (is_fin(nstr[i][j]) && is_fin(nstr[i][j + 1]))
+                cmp[site(nstr[i][j])][site(nstr[i][j + 1])] = '=';
+            if (is_fin(nstr[i][j]) && !is_fin(nstr[i][j + 1]) && is_fin(nstr[i][j + 2]) && nstr[i][j + 2] != '\0')
+                cmp[site(nstr[i][j])][site(nstr[i][j + 2])] = '=';
+            if (!is_fin(nstr[i][j]) && is_fin(nstr[i][j + 1]))
+            { //对于非终结符在终结符之前
+                for (ii = 0; ii < T; ii++)
+                {
+                    if (str[ii][0] == nstr[i][j])
+                        break;
+                }
+                for (jj = 0; jj < lcnt[ii]; jj++)
+                    cmp[site(lastvt[ii][jj])][site(nstr[i][j + 1])] = '>';
+            }
+            if (is_fin(nstr[i][j]) && !is_fin(nstr[i][j + 1]))
+            { //对于终结符在非终结符之前
+                for (ii = 0; ii < T; ii++)
+                {
+                    if (str[ii][0] == nstr[i][j + 1])
+                        break;
+                }
+                for (jj = 0; jj < fcnt[ii]; jj++)
+                    cmp[site(nstr[i][j])][site(firstvt[ii][jj])] = '<';
+            }
+        }
+    }
+}
+void output(int i, int j, char *str)
+{
+    printf("\t");
+    for (int ii = i; ii <= j; ii++)
+        printf("%c", str[ii]);
+}
+int isDX(char c)
+{
+    if (c >= 'A' && c <= 'Z')
+        return 1;
+    return 0;
+}
+void exchange()
+{
+    int ecnt = 0;
+    for (int i = 0; i < 10; i++)
+    {
+        int mcnt = 0;
+        for (int j = 3; nstr[i][j] != '\0'; j++)
+        {
+            if (isDX(nstr[i][j]) && strlen(nstr[i]) != 4)
+                mstr[ecnt][mcnt++] = 'N';
+            else if (!isDX(nstr[i][j]))
+                mstr[ecnt][mcnt++] = nstr[i][j];
+            else
+            {
+                break;
+            }
+        }
+        mstr[ecnt][mcnt] = '\0';
+        if (strlen(mstr[ecnt]) != 0)
+            ecnt++;
+    }
+}
+int get_process(char *st) 
+{
+    exchange();
+    int len = strlen(st);
+    int t = 0; //栈内元素的个数
+    int i = 0, j;
+    int bz = 1;
+    stac[0] = '#';
+    while (st[i] != '\0')
+    {
+        if (is_fin(stac[t]))
+            j = t;
+        else
+            j = t - 1;
+        int a = site(stac[j]);
+        int b = site(st[i]);
+        if (cmp[a][b] == '<' || cmp[a][b] == '=')
+        {
+            printf("\t%d", bz++);
+            output(0, t, stac);
+            printf("\t%c", cmp[a][b]);
+            printf("\t%c", st[i]);
+            output(i + 1, len - 1, st);
+            printf("\tyijin");
+            puts("");
+            t++;
+            stac[t] = st[i];
+            i++;
+        }
+        else if (cmp[a][b] == '>')
+        {
+            printf("\t%d", bz++);
+            output(0, t, stac);
+            printf("\t%c", cmp[a][b]);
+            printf("\t%c", st[i]);
+            output(i + 1, len - 1, st);
+            printf("\tguiyue");
+            puts("");
+            int ii, jj, kk;
+            int flag = 0;
+            for (ii = t; ii >= 0; ii--)
+            {
+                for (jj = 0; jj < maxn; jj++)
+                {
+                    int lee = strlen(mstr[jj]);
+                    int kkn = 0;
+                    for (kk = lee - 1; kk >= 0; kk--)
+                    {
+                        if (stac[ii] == mstr[jj][kk])
+                        {
+                            ii--;
+                            kkn++;
+                        }
+                        else
+                            break;
+                    }
+                    if (strlen(mstr[jj]) == kkn)
+                    {
+                        t = ii + 1;
+                        stac[t++] = 'N';
+                        stac[t] = '\0';
+                        t--;
+                        flag = 1;
+                        break;
+                    }
+                    else
+                    {
+                        ii = ii + kkn;
+                    }
+                }
+                if (!flag)
+                {
+                    printf("\tcuowu");
+                    return 0;
+                }
+                else
+                {
+                    if (t == 1 && st[i] == '#')
+                    {
+                        printf("\t%d", bz++);
+                        output(0, t, stac);
+                        printf("\t=");
+                        printf("\t%c", st[i]);
+                        //output(i+1,len,st);
+                        printf("\t \tjieshou");
+                        return 1;
+                    }
+                    break;
+                }
+            }
+        }
+    }
+}
+int main()
+{
+    int T;
+    while (~scanf("%d", &T))
+    {
+        int cnt = 0; //终结符的个数
+        memset(firstflag, 0, sizeof(firstflag));
+        memset(lastflag, 0, sizeof(lastflag));
+        memset(cmp, 0, sizeof(cmp));
+        for (int i = 0; i < T; i++)
+        {
+            scanf("%s", str[i]);
+            fcnt[i] = lcnt[i] = 0;
+        }
+        for (int i = 0; i < T; i++)
+        {
+            for (int j = 0; str[i][j] != '\0'; j++)
+            {
+                if ((str[i][j] < 'A' || str[i][j] > 'Z') && (str[i][j] != '-' && str[i][j] != '>') && str[i][j] != '|')
+                    fin[cnt++] = str[i][j];
+            }
+        }
+        fin[cnt++] = '#';
+        fin[cnt] = '\0';
+        output_firstvt(T);
+        output_lastvt(T);
+        get_table(T, cnt);
+        scanf("%s", st);
+        get_process(st);
+        puts("");
+    }
+    return 0;
+}
