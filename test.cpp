@@ -12,9 +12,9 @@ struct node
 char s[100] ;
 int num ;
 map<char,int> Map1;//对终结符映射
-map<char,int> Map2;//对非终结符映射
-int Map1_num, Map2_num;//记录终结符个数，非终结符个数
-char s1[100] , s2[100] ;//存储终结符和非终结符
+map<char,int> Map2;
+int Map1_num, Map2_num;
+char s1[100] , s2[100] ;
 int first[20][20] ;
 int follow[20][20] ;
 int vis[100];//禁止重复递归
